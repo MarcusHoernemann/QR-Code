@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.7.9</title>
+    <title>Q-R-Go v1.8.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -45,7 +45,6 @@
         }
 
         header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; text-transform: uppercase; color: white; font-weight: 900; }
-        
         .header-actions { display: flex; gap: 10px; }
 
         .icon-btn {
@@ -159,17 +158,16 @@
 </div>
 
 <footer>
-    <b>v1.7.9</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <b>v1.8.0</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v179';
+    const STORAGE_KEY = 'qr_go_v180';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentType = 'vcard';
     let activeId = null;
     let deferredPrompt;
 
-    // PWA Install Logic
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
@@ -180,14 +178,16 @@
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            document.getElementById('install-prompt').style.display = 'none';
-        }
+        if (outcome === 'accepted') document.getElementById('install-prompt').style.display = 'none';
         deferredPrompt = null;
     }
 
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                console.log('SW registriert');
+            });
+        });
     }
 
     function togglePanel(id) {
@@ -214,7 +214,6 @@
         collection.push({ id: Date.now(), title, content, type: currentType });
         saveAndRender();
         closePanels();
-        document.querySelectorAll('input').forEach(i => i.value = '');
     }
     
     function saveAndRender() {
