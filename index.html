@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.7.4</title>
+    <title>Q-R-Go v1.7.5</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="logo.png">
@@ -44,7 +45,6 @@
         }
 
         header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; text-transform: uppercase; color: white; font-weight: 900; }
-        
         .header-actions { display: flex; gap: 10px; }
 
         .icon-btn {
@@ -57,18 +57,19 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Install-Banner (Nur sichtbar wenn möglich) */
-        #install-banner {
+        #install-btn {
             display: none;
-            width: 100%;
-            max-width: 420px;
-            background: #1f2937;
-            color: white;
+            width: 90%;
+            max-width: 400px;
+            background: #ffffff;
+            color: #1f2937;
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 15px;
-            text-align: center;
+            border-radius: 12px;
+            font-weight: bold;
             border: 2px solid var(--color-link);
+            cursor: pointer;
+            text-align: center;
         }
 
         main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
@@ -77,7 +78,7 @@
         .qr-btn {
             width: 100%; background: var(--btn-base); color: var(--text-on-light);
             padding: 1.6rem; border-radius: 20px; font-size: 1.2rem; font-weight: 700;
-            cursor: pointer; text-align: center; border: 3px solid transparent;
+            cursor: pointer; border: 3px solid transparent;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
         .qr-btn.type-link { border-color: var(--color-link); }
@@ -98,10 +99,6 @@
         }
         .panel.active { display: block; }
 
-        .type-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-        .type-btn { flex: 1; padding: 0.7rem; background: #020617; border: 1px solid #334155; color: #9ca3af; border-radius: 10px; cursor: pointer; }
-        .type-btn.active { border-color: white; color: white; }
-
         input { width: 100%; padding: 1rem; background: #020617; border: 1px solid #1e293b; color: white; border-radius: 12px; margin-bottom: 0.8rem; font-size: 16px; }
 
         .btn-primary { width: 100%; padding: 1rem; background: #374151; border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: bold; }
@@ -116,8 +113,6 @@
         .qr-overlay-content { background: #111827; padding: 2.5rem; border-radius: 35px; text-align: center; }
         .qr-wrapper { background: white; padding: 1rem; border-radius: 15px; margin-bottom: 1.5rem; display: inline-block; }
         .qr-overlay img { display: block; width: 250px; height: 250px; }
-        .timer-bar { width: 100%; height: 6px; background: #020617; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
-        .timer-progress { height: 100%; background: white; width: 100%; }
 
         footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
@@ -132,10 +127,7 @@
     </div>
 </header>
 
-<div id="install-banner">
-    <p>Q-R-Go als App installieren?</p>
-    <button class="btn-primary" id="install-button">Jetzt installieren</button>
-</div>
+<button id="install-btn">App installieren</button>
 
 <div id="backup-panel" class="panel">
     <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
@@ -146,12 +138,7 @@
 </div>
 
 <div id="add-code-form" class="panel">
-    <div class="type-selector">
-        <button class="type-btn active" data-type="vcard" onclick="setType('vcard')">Kontakt</button>
-        <button class="type-btn" data-type="link" onclick="setType('link')">Link</button>
-    </div>
     <input type="text" id="title" placeholder="Anzeigename">
-    <div id="fields-link" style="display:none;"><input type="url" id="url" placeholder="https://..."></div>
     <div id="fields-vcard">
         <input type="text" id="v-name" placeholder="Name">
         <input type="text" id="v-func" placeholder="Funktion">
@@ -166,47 +153,39 @@
 
 <div id="qr-overlay" class="qr-overlay">
     <div class="qr-overlay-content">
-        <div class="timer-bar"><div id="timer-progress" class="timer-progress"></div></div>
         <div class="qr-wrapper"><img id="overlay-img" src="" alt="QR"></div>
         <button class="btn-text" style="color:white" onclick="closeOverlay()">Schließen</button>
     </div>
 </div>
 
 <footer>
-    <b>v1.7.4</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <b>v1.7.5</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v174';
+    const STORAGE_KEY = 'qr_go_v175';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    let currentType = 'vcard';
     let deferredPrompt;
 
-    // Service Worker & Install Logic
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
-        });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        document.getElementById('install-banner').style.display = 'block';
+        document.getElementById('install-btn').style.display = 'block';
     });
 
-    document.getElementById('install-button').addEventListener('click', async () => {
+    document.getElementById('install-btn').addEventListener('click', async () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                document.getElementById('install-banner').style.display = 'none';
-            }
+            if (outcome === 'accepted') document.getElementById('install-btn').style.display = 'none';
             deferredPrompt = null;
         }
     });
 
-    // App Logic
     function togglePanel(id) {
         const p = document.getElementById(id);
         const active = p.classList.contains('active');
@@ -214,51 +193,49 @@
         if(!active) p.classList.add('active');
     }
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); }
-    function setType(t) {
-        currentType = t;
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === t));
-        document.getElementById('fields-link').style.display = t === 'link' ? 'block' : 'none';
-        document.getElementById('fields-vcard').style.display = t === 'vcard' ? 'block' : 'none';
-    }
+    
     function saveNewCode() {
         const title = document.getElementById('title').value.trim();
-        let content = currentType === 'link' ? document.getElementById('url').value.trim() : 
-            `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('v-name').value}\nTITLE:${document.getElementById('v-func').value}\nTEL:${document.getElementById('v-phone').value}\nEMAIL:${document.getElementById('v-email').value}\nEND:VCARD`;
-        if(!title || !content) return;
-        collection.push({ id: Date.now(), title, content, type: currentType });
+        const name = document.getElementById('v-name').value.trim();
+        const func = document.getElementById('v-func').value.trim();
+        const phone = document.getElementById('v-phone').value.trim();
+        const email = document.getElementById('v-email').value.trim();
+        const content = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTITLE:${func}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD`;
+        if(!title || !name) return;
+        collection.push({ id: Date.now(), title, content, type: 'vcard' });
         saveAndRender();
         closePanels();
     }
+    
     function saveAndRender() {
-        collection.sort((a,b) => a.type === b.type ? a.title.localeCompare(b.title) : (a.type === 'vcard' ? -1 : 1));
+        collection.sort((a,b) => a.title.localeCompare(b.title));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
         render();
     }
+    
     function render() {
         const c = document.getElementById('app-container');
         c.innerHTML = '';
         collection.forEach(i => {
             const d = document.createElement('div');
             d.className = 'btn-container';
-            d.innerHTML = `<button class="qr-btn type-${i.type}" onclick="showQr('${i.content.replace(/\n/g, "\\n")}', '${i.type}')">${i.title}</button><button class="delete-btn" onclick="deleteCode(${i.id})">✕</button>`;
+            d.innerHTML = `<button class="qr-btn type-vcard" onclick="showQr('${i.content.replace(/\n/g, "\\n")}')">${i.title}</button><button class="delete-btn" onclick="deleteCode(${i.id})">✕</button>`;
             c.appendChild(d);
         });
     }
+    
     function deleteCode(id) { if(confirm('Löschen?')) { collection = collection.filter(i => i.id !== id); saveAndRender(); } }
-    window.showQr = function(data, type) {
-        const overlay = document.getElementById('qr-overlay');
-        const progress = document.getElementById('timer-progress');
+    
+    window.showQr = function(data) {
         document.getElementById('overlay-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.replace(/\\n/g, "\n"))}`;
-        overlay.classList.add('active');
-        progress.style.transition = 'none'; progress.style.width = '100%';
-        setTimeout(() => { progress.style.transition = 'width 20s linear'; progress.style.width = '0%'; }, 50);
-        this.timer = setTimeout(closeOverlay, 20000);
+        document.getElementById('qr-overlay').classList.add('active');
     }
-    function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); clearTimeout(window.showQr.timer); }
+    function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
+    
     function exportData() {
-        const blob = new Blob([JSON.stringify(collection)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'qr_go_backup.json'; a.click();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(collection)], {type: 'application/json'}));
+        a.download = 'qr_go_backup.json'; a.click();
     }
     function importData(e) {
         const r = new FileReader();
