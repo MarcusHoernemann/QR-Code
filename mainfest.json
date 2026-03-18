@@ -2,7 +2,7 @@
   "name": "Q-R-Go",
   "short_name": "Q-R-Go",
   "description": "QR-Sammlung von Marcus Hörnemann",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#4b5563",
   "theme_color": "#4b5563",
