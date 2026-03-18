@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.7.7</title>
+    <title>Q-R-Go v1.7.8</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -64,9 +64,7 @@
             padding: 1.6rem; border-radius: 20px; font-size: 1.2rem; font-weight: 700;
             cursor: pointer; border: 3px solid transparent;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
         }
-        .qr-btn:active { transform: scale(0.98); }
         .qr-btn.type-link { border-color: var(--color-link); }
         .qr-btn.type-vcard { border-color: var(--color-vcard); }
 
@@ -92,7 +90,6 @@
         .qr-wrapper { background: white; padding: 1rem; border-radius: 15px; margin-bottom: 1.5rem; display: inline-block; }
         .qr-overlay img { display: block; width: 240px; height: 240px; }
 
-        /* Neuer Lösch-Button im Overlay */
         .btn-danger-action {
             margin-top: 15px;
             background: transparent;
@@ -104,7 +101,8 @@
             font-size: 0.8rem;
         }
 
-        footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
+        footer { margin-top: auto; padding: 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
+        #sw-status { font-size: 0.6rem; opacity: 0.5; display: block; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -155,17 +153,24 @@
 </div>
 
 <footer>
-    <b>v1.7.7</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <b>v1.7.8</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <span id="sw-status">Prüfe App-Bereitschaft...</span>
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v177';
+    const STORAGE_KEY = 'qr_go_v178';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentType = 'vcard';
     let activeId = null;
 
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
+        window.addEventListener('load', () => { 
+            navigator.serviceWorker.register('./sw.js').then(() => {
+                document.getElementById('sw-status').innerText = "Bereit für Installation";
+            }).catch(() => {
+                document.getElementById('sw-status').innerText = "Installation eingeschränkt (Check HTTPS)";
+            });
+        });
     }
 
     function togglePanel(id) {
@@ -222,7 +227,7 @@
     function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
 
     document.getElementById('delete-current-btn').onclick = () => {
-        if(confirm('Diesen QR-Code wirklich löschen?')) {
+        if(confirm('Eintrag löschen?')) {
             collection = collection.filter(item => item.id !== activeId);
             saveAndRender();
             closeOverlay();
