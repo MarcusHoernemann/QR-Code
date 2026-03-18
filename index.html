@@ -2,15 +2,13 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Q-R-Go v1.7.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Q-R-Go v1.7.4</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Q-R-Go">
     <link rel="apple-touch-icon" href="logo.png">
 
     <style>
@@ -18,11 +16,8 @@
             --bg-body: #4b5563; 
             --btn-base: #e5e7eb;
             --color-link: #22c55e;
-            --glow-link: rgba(34, 197, 94, 0.4);
             --color-vcard: #f97316;
-            --glow-vcard: rgba(249, 115, 22, 0.4);
             --text-on-light: #1f2937;
-            --text-on-dark: #f9fafb;
             --bg-panel: #111827;
             --danger: #ef4444;
         }
@@ -32,153 +27,99 @@
         body {
             font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg-body);
-            color: var(--text-on-light);
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            user-select: none;
         }
 
         header {
             width: 100%;
-            padding: 3rem 1.5rem 1rem;
+            padding: 3.5rem 1.5rem 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             max-width: 500px;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            color: white;
-            font-weight: 900;
-        }
-
+        header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; text-transform: uppercase; color: white; font-weight: 900; }
+        
         .header-actions { display: flex; gap: 10px; }
 
         .icon-btn {
             background: var(--btn-base);
             border: 2px solid #9ca3af;
             color: #4b5563;
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            font-size: 1.2rem;
+            width: 44px; height: 44px;
+            border-radius: 12px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        main {
+        /* Install-Banner (Nur sichtbar wenn möglich) */
+        #install-banner {
+            display: none;
             width: 100%;
             max-width: 420px;
+            background: #1f2937;
+            color: white;
             padding: 1rem;
-            display: grid;
-            gap: 1.2rem;
+            margin: 1rem 0;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid var(--color-link);
         }
 
+        main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
         .btn-container { position: relative; width: 100%; }
 
         .qr-btn {
-            width: 100%;
-            background: var(--btn-base);
-            color: var(--text-on-light);
-            padding: 1.5rem;
-            border-radius: 18px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: center;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 3px solid transparent;
+            width: 100%; background: var(--btn-base); color: var(--text-on-light);
+            padding: 1.6rem; border-radius: 20px; font-size: 1.2rem; font-weight: 700;
+            cursor: pointer; text-align: center; border: 3px solid transparent;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
-
-        .qr-btn.type-link { border-color: var(--color-link); box-shadow: 0 4px 12px var(--glow-link); }
-        .qr-btn.type-vcard { border-color: var(--color-vcard); box-shadow: 0 4px 12px var(--glow-vcard); }
+        .qr-btn.type-link { border-color: var(--color-link); }
+        .qr-btn.type-vcard { border-color: var(--color-vcard); }
 
         .delete-btn {
-            position: absolute;
-            top: -8px; right: -6px;
-            background: var(--danger);
-            color: white;
-            border: 2px solid var(--btn-base);
-            width: 26px; height: 26px;
-            border-radius: 50%;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 5;
+            position: absolute; top: -10px; right: -8px; background: var(--danger);
+            color: white; border: 2px solid var(--btn-base); width: 28px; height: 28px;
+            border-radius: 50%; font-size: 12px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; opacity: 0;
         }
         .btn-container:hover .delete-btn { opacity: 1; }
 
         .panel {
-            display: none;
-            width: 92%;
-            max-width: 420px;
-            background: var(--bg-panel);
-            padding: 1.5rem;
-            border-radius: 22px;
-            border: 2px solid #334155;
-            margin-bottom: 2rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            color: var(--text-on-dark);
+            display: none; width: 92%; max-width: 420px; background: var(--bg-panel);
+            padding: 2rem; border-radius: 28px; border: 2px solid #334155;
+            margin-bottom: 2rem; box-shadow: 0 25px 50px rgba(0,0,0,0.5); color: white;
         }
-        .panel.active { display: block; animation: fadeIn 0.3s; }
+        .panel.active { display: block; }
 
-        .type-selector { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
-        .type-btn {
-            flex: 1; padding: 0.6rem; background: #020617; border: 1px solid #334155;
-            color: #9ca3af; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
-        }
-        .type-btn.active[data-type="link"] { border-color: var(--color-link); color: var(--color-link); }
-        .type-btn.active[data-type="vcard"] { border-color: var(--color-vcard); color: var(--color-vcard); }
+        .type-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .type-btn { flex: 1; padding: 0.7rem; background: #020617; border: 1px solid #334155; color: #9ca3af; border-radius: 10px; cursor: pointer; }
+        .type-btn.active { border-color: white; color: white; }
 
-        input {
-            width: 100%; padding: 0.8rem; background: #020617; border: 1px solid #1e293b;
-            color: white; border-radius: 10px; margin-bottom: 0.6rem; font-size: 16px; /* 16px verhindert Auto-Zoom bei iOS */
-        }
+        input { width: 100%; padding: 1rem; background: #020617; border: 1px solid #1e293b; color: white; border-radius: 12px; margin-bottom: 0.8rem; font-size: 16px; }
 
-        .btn-primary { width: 100%; padding: 0.9rem; background: #374151; border: 1px solid #4b5563; color: white; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        .btn-text { width: 100%; padding: 0.6rem; background: transparent; border: none; color: #9ca3af; cursor: pointer; text-decoration: underline; font-size: 0.85rem; }
+        .btn-primary { width: 100%; padding: 1rem; background: #374151; border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: bold; }
+        .btn-text { width: 100%; padding: 0.8rem; background: transparent; border: none; color: #9ca3af; cursor: pointer; text-decoration: underline; }
 
         .qr-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 1000; backdrop-filter: blur(8px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(10px);
         }
         .qr-overlay.active { display: flex; }
-        .qr-overlay-content { background: #111827; padding: 2rem; border-radius: 30px; text-align: center; }
-        .qr-wrapper { background: white; padding: 0.8rem; border-radius: 12px; margin-bottom: 1.2rem; display: inline-block; }
-        .qr-overlay img { display: block; width: 240px; height: 240px; }
-        .timer-bar { width: 100%; height: 5px; background: #020617; border-radius: 10px; margin-bottom: 1.2rem; overflow: hidden; }
+        .qr-overlay-content { background: #111827; padding: 2.5rem; border-radius: 35px; text-align: center; }
+        .qr-wrapper { background: white; padding: 1rem; border-radius: 15px; margin-bottom: 1.5rem; display: inline-block; }
+        .qr-overlay img { display: block; width: 250px; height: 250px; }
+        .timer-bar { width: 100%; height: 6px; background: #020617; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
         .timer-progress { height: 100%; background: white; width: 100%; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        footer {
-            margin-top: auto;
-            padding: 1.5rem 1rem;
-            text-align: center;
-            width: 100%;
-            color: #94a3b8;
-            font-size: 0.7rem;
-            letter-spacing: 1px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        footer b { color: #cbd5e1; }
+        footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
@@ -191,11 +132,16 @@
     </div>
 </header>
 
+<div id="install-banner">
+    <p>Q-R-Go als App installieren?</p>
+    <button class="btn-primary" id="install-button">Jetzt installieren</button>
+</div>
+
 <div id="backup-panel" class="panel">
-    <h2 style="font-size: 0.9rem; text-transform: uppercase; margin-top:0;">Backup</h2>
-    <button class="btn-primary" onclick="exportData()">💾 Daten exportieren</button>
+    <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
+    <button class="btn-primary" onclick="exportData()">💾 Exportieren</button>
     <input type="file" id="import-file" style="display:none" onchange="importData(event)">
-    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Backup laden</button>
+    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Laden</button>
     <button class="btn-text" onclick="closePanels()">Schließen</button>
 </div>
 
@@ -222,143 +168,103 @@
     <div class="qr-overlay-content">
         <div class="timer-bar"><div id="timer-progress" class="timer-progress"></div></div>
         <div class="qr-wrapper"><img id="overlay-img" src="" alt="QR"></div>
-        <br>
         <button class="btn-text" style="color:white" onclick="closeOverlay()">Schließen</button>
     </div>
 </div>
 
 <footer>
-    <b>v1.7.2</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
+    <b>v1.7.4</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v172';
+    const STORAGE_KEY = 'qr_go_v174';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentType = 'vcard';
+    let deferredPrompt;
 
-    // Service Worker Registrierung
+    // Service Worker & Install Logic
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(() => {
-            console.log('Q-R-Go Service Worker aktiv.');
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js');
         });
     }
 
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('install-banner').style.display = 'block';
+    });
+
+    document.getElementById('install-button').addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('install-banner').style.display = 'none';
+            }
+            deferredPrompt = null;
+        }
+    });
+
+    // App Logic
     function togglePanel(id) {
-        const panel = document.getElementById(id);
-        const isActive = panel.classList.contains('active');
+        const p = document.getElementById(id);
+        const active = p.classList.contains('active');
         closePanels();
-        if (!isActive) panel.classList.add('active');
+        if(!active) p.classList.add('active');
     }
-
-    function closePanels() {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); }
+    function setType(t) {
+        currentType = t;
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+        document.getElementById('fields-link').style.display = t === 'link' ? 'block' : 'none';
+        document.getElementById('fields-vcard').style.display = t === 'vcard' ? 'block' : 'none';
     }
-
-    function setType(type) {
-        currentType = type;
-        document.querySelectorAll('.type-btn').forEach(b => {
-            b.classList.toggle('active', b.getAttribute('data-type') === type);
-        });
-        document.getElementById('fields-link').style.display = type === 'link' ? 'block' : 'none';
-        document.getElementById('fields-vcard').style.display = type === 'vcard' ? 'block' : 'none';
-    }
-
     function saveNewCode() {
         const title = document.getElementById('title').value.trim();
-        let content = "";
-        if(currentType === 'link') {
-            content = document.getElementById('url').value.trim();
-        } else {
-            const name = document.getElementById('v-name').value.trim();
-            const func = document.getElementById('v-func').value.trim();
-            const phone = document.getElementById('v-phone').value.trim();
-            const email = document.getElementById('v-email').value.trim();
-            content = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTITLE:${func}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD`;
-        }
+        let content = currentType === 'link' ? document.getElementById('url').value.trim() : 
+            `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('v-name').value}\nTITLE:${document.getElementById('v-func').value}\nTEL:${document.getElementById('v-phone').value}\nEMAIL:${document.getElementById('v-email').value}\nEND:VCARD`;
         if(!title || !content) return;
         collection.push({ id: Date.now(), title, content, type: currentType });
         saveAndRender();
         closePanels();
-        document.querySelectorAll('input').forEach(i => i.value = '');
     }
-
-    function deleteCode(id) {
-        if(confirm('Löschen?')) {
-            collection = collection.filter(i => i.id !== id);
-            saveAndRender();
-        }
-    }
-
-    function exportData() {
-        if (collection.length === 0) return;
-        const dataStr = JSON.stringify(collection);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', 'qr_go_backup.json');
-        linkElement.click();
-    }
-
-    function importData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const imported = JSON.parse(e.target.result);
-                if (Array.isArray(imported)) {
-                    if(confirm("Bestehende Daten überschreiben?")) {
-                        collection = imported;
-                        saveAndRender();
-                        closePanels();
-                    }
-                }
-            } catch (err) { alert("Fehler beim Import."); }
-        };
-        reader.readAsText(file);
-    }
-
     function saveAndRender() {
-        collection.sort((a, b) => {
-            if (a.type === b.type) return a.title.localeCompare(b.title);
-            return a.type === 'vcard' ? -1 : 1; 
-        });
+        collection.sort((a,b) => a.type === b.type ? a.title.localeCompare(b.title) : (a.type === 'vcard' ? -1 : 1));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
         render();
     }
-
     function render() {
-        const container = document.getElementById('app-container');
-        container.innerHTML = '';
-        collection.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'btn-container';
-            div.innerHTML = `
-                <button class="qr-btn type-${item.type}" onclick="showQr('${item.content.replace(/\n/g, "\\n")}', '${item.type}')">${item.title}</button>
-                <button class="delete-btn" onclick="deleteCode(${item.id})">✕</button>
-            `;
-            container.appendChild(div);
+        const c = document.getElementById('app-container');
+        c.innerHTML = '';
+        collection.forEach(i => {
+            const d = document.createElement('div');
+            d.className = 'btn-container';
+            d.innerHTML = `<button class="qr-btn type-${i.type}" onclick="showQr('${i.content.replace(/\n/g, "\\n")}', '${i.type}')">${i.title}</button><button class="delete-btn" onclick="deleteCode(${i.id})">✕</button>`;
+            c.appendChild(d);
         });
     }
-
+    function deleteCode(id) { if(confirm('Löschen?')) { collection = collection.filter(i => i.id !== id); saveAndRender(); } }
     window.showQr = function(data, type) {
-        const decodedData = data.replace(/\\n/g, "\n");
         const overlay = document.getElementById('qr-overlay');
         const progress = document.getElementById('timer-progress');
-        document.getElementById('overlay-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(decodedData)}`;
-        progress.style.backgroundColor = type === 'link' ? 'var(--color-link)' : 'var(--color-vcard)';
+        document.getElementById('overlay-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.replace(/\\n/g, "\n"))}`;
         overlay.classList.add('active');
-        progress.style.transition = 'none';
-        progress.style.width = '100%';
+        progress.style.transition = 'none'; progress.style.width = '100%';
         setTimeout(() => { progress.style.transition = 'width 20s linear'; progress.style.width = '0%'; }, 50);
         this.timer = setTimeout(closeOverlay, 20000);
     }
-
-    function closeOverlay() {
-        document.getElementById('qr-overlay').classList.remove('active');
-        clearTimeout(window.showQr.timer);
+    function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); clearTimeout(window.showQr.timer); }
+    function exportData() {
+        const blob = new Blob([JSON.stringify(collection)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'qr_go_backup.json'; a.click();
     }
-
+    function importData(e) {
+        const r = new FileReader();
+        r.onload = (ev) => { collection = JSON.parse(ev.target.result); saveAndRender(); closePanels(); };
+        r.readAsText(e.target.files[0]);
+    }
     saveAndRender();
 </script>
 </body>
