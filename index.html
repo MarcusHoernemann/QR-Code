@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.7.8</title>
+    <title>Q-R-Go v1.7.9</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -45,6 +45,7 @@
         }
 
         header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 4px; text-transform: uppercase; color: white; font-weight: 900; }
+        
         .header-actions { display: flex; gap: 10px; }
 
         .icon-btn {
@@ -57,8 +58,23 @@
             display: flex; align-items: center; justify-content: center;
         }
 
+        /* Installations-Trigger Balken */
+        #install-prompt {
+            display: none;
+            width: 90%;
+            max-width: 420px;
+            background: var(--color-link);
+            color: white;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 15px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
         main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
-        
         .qr-btn {
             width: 100%; background: var(--btn-base); color: var(--text-on-light);
             padding: 1.6rem; border-radius: 20px; font-size: 1.2rem; font-weight: 700;
@@ -76,7 +92,6 @@
         .panel.active { display: block; }
 
         input { width: 100%; padding: 1rem; background: #020617; border: 1px solid #1e293b; color: white; border-radius: 12px; margin-bottom: 0.8rem; font-size: 16px; }
-
         .btn-primary { width: 100%; padding: 1rem; background: #374151; border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: bold; }
         .btn-text { width: 100%; padding: 0.8rem; background: transparent; border: none; color: #9ca3af; cursor: pointer; text-decoration: underline; }
 
@@ -89,20 +104,9 @@
         .qr-overlay-content { background: #111827; padding: 2rem; border-radius: 35px; text-align: center; width: 320px; }
         .qr-wrapper { background: white; padding: 1rem; border-radius: 15px; margin-bottom: 1.5rem; display: inline-block; }
         .qr-overlay img { display: block; width: 240px; height: 240px; }
+        .btn-danger-action { margin-top: 15px; background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 15px; border-radius: 8px; cursor: pointer; }
 
-        .btn-danger-action {
-            margin-top: 15px;
-            background: transparent;
-            border: 1px solid var(--danger);
-            color: var(--danger);
-            padding: 8px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        footer { margin-top: auto; padding: 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
-        #sw-status { font-size: 0.6rem; opacity: 0.5; display: block; margin-top: 5px; }
+        footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
@@ -114,6 +118,8 @@
         <button class="icon-btn" onclick="togglePanel('add-code-form')">+</button>
     </div>
 </header>
+
+<div id="install-prompt" onclick="triggerInstall()">📱 Als App installieren</div>
 
 <div id="backup-panel" class="panel">
     <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
@@ -153,24 +159,35 @@
 </div>
 
 <footer>
-    <b>v1.7.8</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
-    <span id="sw-status">Prüfe App-Bereitschaft...</span>
+    <b>v1.7.9</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v178';
+    const STORAGE_KEY = 'qr_go_v179';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentType = 'vcard';
     let activeId = null;
+    let deferredPrompt;
+
+    // PWA Install Logic
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('install-prompt').style.display = 'block';
+    });
+
+    async function triggerInstall() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            document.getElementById('install-prompt').style.display = 'none';
+        }
+        deferredPrompt = null;
+    }
 
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { 
-            navigator.serviceWorker.register('./sw.js').then(() => {
-                document.getElementById('sw-status').innerText = "Bereit für Installation";
-            }).catch(() => {
-                document.getElementById('sw-status').innerText = "Installation eingeschränkt (Check HTTPS)";
-            });
-        });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
     }
 
     function togglePanel(id) {
@@ -227,7 +244,7 @@
     function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
 
     document.getElementById('delete-current-btn').onclick = () => {
-        if(confirm('Eintrag löschen?')) {
+        if(confirm('Diesen QR-Code wirklich löschen?')) {
             collection = collection.filter(item => item.id !== activeId);
             saveAndRender();
             closeOverlay();
