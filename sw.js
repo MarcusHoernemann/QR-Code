@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qr-go-v1.8.1';
+const CACHE_NAME = 'qr-go-v1.8.2';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -18,7 +18,7 @@ self.addEventListener('activate', (e) => {
       keys.map(k => k !== CACHE_NAME && caches.delete(k))
     ))
   );
-  self.clients.claim();
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
