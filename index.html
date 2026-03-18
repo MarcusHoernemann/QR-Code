@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.7.6</title>
+    <title>Q-R-Go v1.7.7</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -58,24 +58,17 @@
         }
 
         main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
-        .btn-container { position: relative; width: 100%; }
-
+        
         .qr-btn {
             width: 100%; background: var(--btn-base); color: var(--text-on-light);
             padding: 1.6rem; border-radius: 20px; font-size: 1.2rem; font-weight: 700;
             cursor: pointer; border: 3px solid transparent;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
         }
+        .qr-btn:active { transform: scale(0.98); }
         .qr-btn.type-link { border-color: var(--color-link); }
         .qr-btn.type-vcard { border-color: var(--color-vcard); }
-
-        .delete-btn {
-            position: absolute; top: -10px; right: -8px; background: var(--danger);
-            color: white; border: 2px solid var(--btn-base); width: 28px; height: 28px;
-            border-radius: 50%; font-size: 12px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; opacity: 0;
-        }
-        .btn-container:hover .delete-btn { opacity: 1; }
 
         .panel {
             display: none; width: 92%; max-width: 420px; background: var(--bg-panel);
@@ -95,9 +88,21 @@
             z-index: 1000; backdrop-filter: blur(10px);
         }
         .qr-overlay.active { display: flex; }
-        .qr-overlay-content { background: #111827; padding: 2.5rem; border-radius: 35px; text-align: center; }
+        .qr-overlay-content { background: #111827; padding: 2rem; border-radius: 35px; text-align: center; width: 320px; }
         .qr-wrapper { background: white; padding: 1rem; border-radius: 15px; margin-bottom: 1.5rem; display: inline-block; }
-        .qr-overlay img { display: block; width: 250px; height: 250px; }
+        .qr-overlay img { display: block; width: 240px; height: 240px; }
+
+        /* Neuer Lösch-Button im Overlay */
+        .btn-danger-action {
+            margin-top: 15px;
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
 
         footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
@@ -114,16 +119,16 @@
 
 <div id="backup-panel" class="panel">
     <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
-    <button class="btn-primary" onclick="exportData()">💾 Exportieren</button>
+    <button class="btn-primary" onclick="exportData()">💾 Daten exportieren</button>
     <input type="file" id="import-file" style="display:none" onchange="importData(event)">
-    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Laden</button>
+    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Backup laden</button>
     <button class="btn-text" onclick="closePanels()">Schließen</button>
 </div>
 
 <div id="add-code-form" class="panel">
-    <div class="type-selector">
-        <button class="type-btn active" data-type="vcard" onclick="setType('vcard')">Kontakt</button>
-        <button class="type-btn" data-type="link" onclick="setType('link')">Link</button>
+    <div style="display:flex; gap:5px; margin-bottom:15px;">
+        <button class="btn-primary" style="flex:1" id="type-vcard-btn" onclick="setType('vcard')">Kontakt</button>
+        <button class="btn-primary" style="flex:1; opacity:0.5" id="type-link-btn" onclick="setType('link')">Link</button>
     </div>
     <input type="text" id="title" placeholder="Anzeigename">
     <div id="fields-link" style="display:none;"><input type="url" id="url" placeholder="https://..."></div>
@@ -142,30 +147,25 @@
 <div id="qr-overlay" class="qr-overlay">
     <div class="qr-overlay-content">
         <div class="qr-wrapper"><img id="overlay-img" src="" alt="QR"></div>
+        <br>
         <button class="btn-text" style="color:white" onclick="closeOverlay()">Schließen</button>
+        <br>
+        <button id="delete-current-btn" class="btn-danger-action">Eintrag löschen</button>
     </div>
 </div>
 
 <footer>
-    <b>v1.7.6</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <b>v1.7.7</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v176';
+    const STORAGE_KEY = 'qr_go_v177';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    let currentType = 'vcard';
+    let activeId = null;
 
-    // Service Worker REGISTRIERUNG
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-            reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        location.reload(); // Seite neu laden, wenn Update da ist
-                    }
-                };
-            };
-        });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
     }
 
     function togglePanel(id) {
@@ -177,21 +177,22 @@
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); }
     
     function setType(t) {
-        window.currentType = t;
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+        currentType = t;
+        document.getElementById('type-vcard-btn').style.opacity = t === 'vcard' ? '1' : '0.5';
+        document.getElementById('type-link-btn').style.opacity = t === 'link' ? '1' : '0.5';
         document.getElementById('fields-link').style.display = t === 'link' ? 'block' : 'none';
         document.getElementById('fields-vcard').style.display = t === 'vcard' ? 'block' : 'none';
     }
-    window.currentType = 'vcard';
 
     function saveNewCode() {
         const title = document.getElementById('title').value.trim();
-        const content = window.currentType === 'link' ? document.getElementById('url').value.trim() : 
+        const content = currentType === 'link' ? document.getElementById('url').value.trim() : 
             `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('v-name').value}\nTITLE:${document.getElementById('v-func').value}\nTEL:${document.getElementById('v-phone').value}\nEMAIL:${document.getElementById('v-email').value}\nEND:VCARD`;
         if(!title || !content) return;
-        collection.push({ id: Date.now(), title, content, type: window.currentType });
+        collection.push({ id: Date.now(), title, content, type: currentType });
         saveAndRender();
         closePanels();
+        document.querySelectorAll('input').forEach(i => i.value = '');
     }
     
     function saveAndRender() {
@@ -199,23 +200,34 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
         render();
     }
+    
     function render() {
         const c = document.getElementById('app-container');
         c.innerHTML = '';
         collection.forEach(i => {
-            const d = document.createElement('div');
-            d.className = 'btn-container';
-            d.innerHTML = `<button class="qr-btn type-${i.type}" onclick="showQr('${i.content.replace(/\n/g, "\\n")}')">${i.title}</button><button class="delete-btn" onclick="deleteCode(${i.id})">✕</button>`;
-            c.appendChild(d);
+            const btn = document.createElement('button');
+            btn.className = `qr-btn type-${i.type}`;
+            btn.textContent = i.title;
+            btn.onclick = () => showQr(i.content, i.id);
+            c.appendChild(btn);
         });
     }
-    function deleteCode(id) { if(confirm('Löschen?')) { collection = collection.filter(i => i.id !== id); saveAndRender(); } }
-    
-    window.showQr = function(data) {
-        document.getElementById('overlay-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.replace(/\\n/g, "\n"))}`;
+
+    window.showQr = function(data, id) {
+        activeId = id;
+        document.getElementById('overlay-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`;
         document.getElementById('qr-overlay').classList.add('active');
     }
+    
     function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
+
+    document.getElementById('delete-current-btn').onclick = () => {
+        if(confirm('Diesen QR-Code wirklich löschen?')) {
+            collection = collection.filter(item => item.id !== activeId);
+            saveAndRender();
+            closeOverlay();
+        }
+    };
     
     function exportData() {
         const a = document.createElement('a');
