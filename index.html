@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.8.2</title>
+    <title>Q-R-Go v1.8.3</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -69,7 +69,6 @@
             text-align: center;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
@@ -105,6 +104,7 @@
         .btn-danger-action { margin-top: 15px; background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 15px; border-radius: 8px; cursor: pointer; }
 
         footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
+        #debug { font-size: 0.6rem; color: #fbbf24; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -117,23 +117,18 @@
     </div>
 </header>
 
-<div id="install-prompt" onclick="triggerInstall()">📱 Als App installieren</div>
+<div id="install-prompt" onclick="triggerInstall()">📱 App jetzt installieren</div>
 
 <div id="backup-panel" class="panel">
     <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
-    <button class="btn-primary" onclick="exportData()">💾 Daten exportieren</button>
+    <button class="btn-primary" onclick="exportData()">💾 Exportieren</button>
     <input type="file" id="import-file" style="display:none" onchange="importData(event)">
-    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Backup laden</button>
+    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Laden</button>
     <button class="btn-text" onclick="closePanels()">Schließen</button>
 </div>
 
 <div id="add-code-form" class="panel">
-    <div style="display:flex; gap:5px; margin-bottom:15px;">
-        <button class="btn-primary" style="flex:1" id="type-vcard-btn" onclick="setType('vcard')">Kontakt</button>
-        <button class="btn-primary" style="flex:1; opacity:0.5" id="type-link-btn" onclick="setType('link')">Link</button>
-    </div>
     <input type="text" id="title" placeholder="Anzeigename">
-    <div id="fields-link" style="display:none;"><input type="url" id="url" placeholder="https://..."></div>
     <div id="fields-vcard">
         <input type="text" id="v-name" placeholder="Name">
         <input type="text" id="v-func" placeholder="Funktion">
@@ -157,22 +152,23 @@
 </div>
 
 <footer>
-    <b>v1.8.2</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
+    <b>v1.8.3</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <span id="debug">Warte auf System...</span>
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v182';
+    const STORAGE_KEY = 'qr_go_v183';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    let currentType = 'vcard';
     let activeId = null;
     let deferredPrompt;
 
-    // PWA Install Prompt abfangen
+    const debug = (msg) => document.getElementById('debug').innerText = msg;
+
     window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('Installationsbereit!');
         e.preventDefault();
         deferredPrompt = e;
         document.getElementById('install-prompt').style.display = 'block';
+        debug("Bereit zur Installation!");
     });
 
     async function triggerInstall() {
@@ -183,11 +179,8 @@
         deferredPrompt = null;
     }
 
-    // Service Worker Registrierung
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log('SW aktiv'))
-            .catch(err => console.log('SW Fehler:', err));
+        navigator.serviceWorker.register('sw.js').then(() => debug("System aktiv (SW OK)")).catch(err => debug("SW Fehler: " + err));
     }
 
     function togglePanel(id) {
@@ -198,27 +191,17 @@
     }
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); }
     
-    function setType(t) {
-        currentType = t;
-        document.getElementById('type-vcard-btn').style.opacity = t === 'vcard' ? '1' : '0.5';
-        document.getElementById('type-link-btn').style.opacity = t === 'link' ? '1' : '0.5';
-        document.getElementById('fields-link').style.display = t === 'link' ? 'block' : 'none';
-        document.getElementById('fields-vcard').style.display = t === 'vcard' ? 'block' : 'none';
-    }
-
     function saveNewCode() {
         const title = document.getElementById('title').value.trim();
-        const content = currentType === 'link' ? document.getElementById('url').value.trim() : 
-            `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('v-name').value}\nTITLE:${document.getElementById('v-func').value}\nTEL:${document.getElementById('v-phone').value}\nEMAIL:${document.getElementById('v-email').value}\nEND:VCARD`;
-        if(!title || !content) return;
-        collection.push({ id: Date.now(), title, content, type: currentType });
+        const content = `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('v-name').value}\nTITLE:${document.getElementById('v-func').value}\nTEL:${document.getElementById('v-phone').value}\nEMAIL:${document.getElementById('v-email').value}\nEND:VCARD`;
+        if(!title) return;
+        collection.push({ id: Date.now(), title, content, type: 'vcard' });
         saveAndRender();
         closePanels();
-        document.querySelectorAll('input').forEach(i => i.value = '');
     }
     
     function saveAndRender() {
-        collection.sort((a,b) => a.type === b.type ? a.title.localeCompare(b.title) : (a.type === 'vcard' ? -1 : 1));
+        collection.sort((a,b) => a.title.localeCompare(b.title));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
         render();
     }
@@ -228,7 +211,7 @@
         c.innerHTML = '';
         collection.forEach(i => {
             const btn = document.createElement('button');
-            btn.className = `qr-btn type-${i.type}`;
+            btn.className = 'qr-btn type-vcard';
             btn.textContent = i.title;
             btn.onclick = () => showQr(i.content, i.id);
             c.appendChild(btn);
@@ -244,7 +227,7 @@
     function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
 
     document.getElementById('delete-current-btn').onclick = () => {
-        if(confirm('Eintrag löschen?')) {
+        if(confirm('Löschen?')) {
             collection = collection.filter(item => item.id !== activeId);
             saveAndRender();
             closeOverlay();
