@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.8.4</title>
+    <title>Q-R-Go v1.8.6</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -55,7 +55,10 @@
             border-radius: 12px;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
         }
+
+        .icon-btn:active { transform: scale(0.9); }
 
         #install-prompt {
             display: none;
@@ -69,6 +72,7 @@
             text-align: center;
             font-weight: bold;
             cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
         main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
@@ -79,7 +83,9 @@
             cursor: pointer; border: 3px solid transparent;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
+            transition: transform 0.1s;
         }
+        .qr-btn:active { transform: scale(0.97); }
         .qr-btn.type-link { border-color: var(--color-link); }
         .qr-btn.type-vcard { border-color: var(--color-vcard); }
 
@@ -88,11 +94,18 @@
             padding: 2rem; border-radius: 28px; border: 2px solid #334155;
             margin-bottom: 2rem; box-shadow: 0 25px 50px rgba(0,0,0,0.5); color: white;
         }
-        .panel.active { display: block; }
+        .panel.active { display: block; animation: slideUp 0.3s ease; }
 
-        .type-selector { display: flex; gap: 5px; margin-bottom: 15px; }
-        .type-btn { flex: 1; padding: 0.8rem; background: #374151; border: 1px solid #4b5563; color: white; border-radius: 12px; cursor: pointer; opacity: 0.5; font-weight: bold; }
-        .type-btn.active { opacity: 1; border-color: white; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .type-selector { display: flex; gap: 8px; margin-bottom: 20px; }
+        .type-btn { 
+            flex: 1; padding: 10px; border-radius: 12px; border: 2px solid #374151; 
+            background: #1f2937; color: #9ca3af; cursor: pointer; font-weight: bold;
+            transition: all 0.2s;
+        }
+        .type-btn.active.vcard { border-color: var(--color-vcard); color: var(--color-vcard); background: rgba(249, 115, 22, 0.1); }
+        .type-btn.active.link { border-color: var(--color-link); color: var(--color-link); background: rgba(34, 197, 94, 0.1); }
 
         input { width: 100%; padding: 1rem; background: #020617; border: 1px solid #1e293b; color: white; border-radius: 12px; margin-bottom: 0.8rem; font-size: 16px; }
         .btn-primary { width: 100%; padding: 1rem; background: #374151; border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: bold; }
@@ -104,13 +117,12 @@
             z-index: 1000; backdrop-filter: blur(10px);
         }
         .qr-overlay.active { display: flex; }
-        .qr-overlay-content { background: #111827; padding: 2rem; border-radius: 35px; text-align: center; width: 320px; }
+        .qr-overlay-content { background: #111827; padding: 2rem; border-radius: 35px; text-align: center; width: 320px; border: 1px solid #334155; }
         .qr-wrapper { background: white; padding: 1rem; border-radius: 15px; margin-bottom: 1.5rem; display: inline-block; }
         .qr-overlay img { display: block; width: 240px; height: 240px; }
-        .btn-danger-action { margin-top: 15px; background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-danger-action { margin-top: 15px; background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; }
 
         footer { margin-top: auto; padding: 1.5rem 1rem; text-align: center; width: 100%; color: #94a3b8; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.05); }
-        #debug { font-size: 0.6rem; color: #fbbf24; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -118,38 +130,38 @@
 <header>
     <h1>Q-R-Go</h1>
     <div class="header-actions">
-        <button class="icon-btn" onclick="togglePanel('backup-panel')">💾</button>
-        <button class="icon-btn" onclick="togglePanel('add-code-form')">+</button>
+        <button class="icon-btn" onclick="togglePanel('backup-panel')" title="Backup">💾</button>
+        <button class="icon-btn" id="open-add-form" title="Hinzufügen">+</button>
     </div>
 </header>
 
-<div id="install-prompt" onclick="triggerInstall()">📱 App jetzt installieren</div>
+<div id="install-prompt" onclick="triggerInstall()">📱 Q-R-Go installieren</div>
 
 <div id="backup-panel" class="panel">
-    <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
-    <button class="btn-primary" onclick="exportData()">💾 Exportieren</button>
+    <h2 style="font-size: 0.9rem; text-transform: uppercase; margin-top:0;">Backup & Restore</h2>
+    <button class="btn-primary" onclick="exportData()">💾 Sammlung exportieren</button>
     <input type="file" id="import-file" style="display:none" onchange="importData(event)">
-    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Laden</button>
+    <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Backup laden</button>
     <button class="btn-text" onclick="closePanels()">Schließen</button>
 </div>
 
 <div id="add-code-form" class="panel">
     <div class="type-selector">
-        <button id="vcard-tab" class="type-btn active" onclick="setType('vcard')">Kontakt</button>
-        <button id="link-tab" class="type-btn" onclick="setType('link')">Link</button>
+        <button id="vcard-tab" class="type-btn active vcard" onclick="setType('vcard')">Kontakt</button>
+        <button id="link-tab" class="type-btn link" onclick="setType('link')">Link</button>
     </div>
     
-    <input type="text" id="title" placeholder="Anzeigename">
+    <input type="text" id="title" placeholder="Anzeigename (z.B. Visitenkarte)">
     
     <div id="fields-link" style="display:none;">
-        <input type="url" id="url" placeholder="https://...">
+        <input type="url" id="url" placeholder="https://www.beispiel.de">
     </div>
     
     <div id="fields-vcard">
         <input type="text" id="v-name" placeholder="Name">
         <input type="text" id="v-func" placeholder="Funktion">
-        <input type="tel" id="v-phone" placeholder="Telefon">
-        <input type="email" id="v-email" placeholder="E-Mail">
+        <input type="tel" id="v-phone" placeholder="Telefonnummer">
+        <input type="email" id="v-email" placeholder="E-Mail Adresse">
     </div>
     
     <button class="btn-primary" onclick="saveNewCode()">Speichern</button>
@@ -162,32 +174,28 @@
     <div class="qr-overlay-content">
         <div class="qr-wrapper"><img id="overlay-img" src="" alt="QR"></div>
         <br>
-        <button class="btn-text" style="color:white" onclick="closeOverlay()">Schließen</button>
+        <button class="btn-text" style="color:white; font-weight:bold;" onclick="closeOverlay()">Fertig</button>
         <br>
         <button id="delete-current-btn" class="btn-danger-action">Eintrag löschen</button>
     </div>
 </div>
 
 <footer>
-    <b>v1.8.4</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
-    <span id="debug">System wird geprüft...</span>
+    <b>v1.8.6</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v184';
+    const STORAGE_KEY = 'qr_go_v186';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let activeId = null;
     let currentType = 'vcard';
     let deferredPrompt;
 
-    const debug = (msg) => document.getElementById('debug').innerText = msg;
-
-    // PWA Logic
+    // PWA Install Prompt
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
         document.getElementById('install-prompt').style.display = 'block';
-        debug("Bereit zur Installation!");
     });
 
     async function triggerInstall() {
@@ -199,18 +207,31 @@
     }
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(() => debug("System aktiv")).catch(err => debug("SW Fehler: " + err));
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
     }
 
-    // App Logic
+    // --- FIX: Formular-Funktionen ---
+    
     function togglePanel(id) {
         const p = document.getElementById(id);
         const active = p.classList.contains('active');
         closePanels();
-        if(!active) p.classList.add('active');
+        if(!active) {
+            p.style.display = 'block';
+            p.classList.add('active');
+        }
     }
     
-    function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); }
+    document.getElementById('open-add-form').onclick = () => togglePanel('add-code-form');
+
+    function closePanels() {
+        document.querySelectorAll('.panel').forEach(p => {
+            p.classList.remove('active');
+            p.style.display = 'none';
+        });
+    }
 
     function setType(type) {
         currentType = type;
@@ -234,12 +255,12 @@
             content = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTITLE:${func}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD`;
         }
         
-        if(!title || !content) return;
+        if(!title || !content) return alert("Bitte fülle die nötigen Felder aus.");
         
         collection.push({ id: Date.now(), title, content, type: currentType });
         saveAndRender();
         closePanels();
-        document.querySelectorAll('input').forEach(i => i.value = '');
+        document.querySelectorAll('#add-code-form input').forEach(i => i.value = '');
     }
 
     function saveAndRender() {
@@ -269,7 +290,7 @@
     function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
 
     document.getElementById('delete-current-btn').onclick = () => {
-        if(confirm('Eintrag löschen?')) {
+        if(confirm('Diesen QR-Code wirklich löschen?')) {
             collection = collection.filter(item => item.id !== activeId);
             saveAndRender();
             closeOverlay();
@@ -277,14 +298,21 @@
     };
 
     function exportData() {
+        const blob = new Blob([JSON.stringify(collection)], {type: 'application/json'});
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(collection)], {type: 'application/json'}));
+        a.href = URL.createObjectURL(blob);
         a.download = 'qr_go_backup.json'; a.click();
     }
 
     function importData(e) {
         const r = new FileReader();
-        r.onload = (ev) => { collection = JSON.parse(ev.target.result); saveAndRender(); closePanels(); };
+        r.onload = (ev) => { 
+            try {
+                collection = JSON.parse(ev.target.result);
+                saveAndRender();
+                closePanels();
+            } catch(e) { alert("Backup-Datei fehlerhaft."); }
+        };
         r.readAsText(e.target.files[0]);
     }
 
