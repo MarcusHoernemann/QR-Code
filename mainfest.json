@@ -1,9 +1,10 @@
 {
   "name": "Q-R-Go",
   "short_name": "Q-R-Go",
-  "description": "Deine QR-Code Sammlung von Marcus Hörnemann",
-  "start_url": "index.html",
+  "description": "QR-Sammlung von Marcus Hörnemann",
+  "start_url": "./index.html",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#4b5563",
   "theme_color": "#4b5563",
   "icons": [
