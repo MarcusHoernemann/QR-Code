@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.7.5</title>
+    <title>Q-R-Go v1.7.6</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -55,21 +55,6 @@
             border-radius: 12px;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-        }
-
-        #install-btn {
-            display: none;
-            width: 90%;
-            max-width: 400px;
-            background: #ffffff;
-            color: #1f2937;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 12px;
-            font-weight: bold;
-            border: 2px solid var(--color-link);
-            cursor: pointer;
-            text-align: center;
         }
 
         main { width: 100%; max-width: 420px; padding: 1rem; display: grid; gap: 1.2rem; }
@@ -127,8 +112,6 @@
     </div>
 </header>
 
-<button id="install-btn">App installieren</button>
-
 <div id="backup-panel" class="panel">
     <h2 style="font-size: 0.9rem; text-transform: uppercase;">Backup</h2>
     <button class="btn-primary" onclick="exportData()">💾 Exportieren</button>
@@ -138,7 +121,12 @@
 </div>
 
 <div id="add-code-form" class="panel">
+    <div class="type-selector">
+        <button class="type-btn active" data-type="vcard" onclick="setType('vcard')">Kontakt</button>
+        <button class="type-btn" data-type="link" onclick="setType('link')">Link</button>
+    </div>
     <input type="text" id="title" placeholder="Anzeigename">
+    <div id="fields-link" style="display:none;"><input type="url" id="url" placeholder="https://..."></div>
     <div id="fields-vcard">
         <input type="text" id="v-name" placeholder="Name">
         <input type="text" id="v-func" placeholder="Funktion">
@@ -159,32 +147,26 @@
 </div>
 
 <footer>
-    <b>v1.7.5</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
+    <b>v1.7.6</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v175';
+    const STORAGE_KEY = 'qr_go_v176';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    let deferredPrompt;
 
+    // Service Worker REGISTRIERUNG
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        location.reload(); // Seite neu laden, wenn Update da ist
+                    }
+                };
+            };
+        });
     }
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        document.getElementById('install-btn').style.display = 'block';
-    });
-
-    document.getElementById('install-btn').addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') document.getElementById('install-btn').style.display = 'none';
-            deferredPrompt = null;
-        }
-    });
 
     function togglePanel(id) {
         const p = document.getElementById(id);
@@ -194,36 +176,39 @@
     }
     function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); }
     
+    function setType(t) {
+        window.currentType = t;
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+        document.getElementById('fields-link').style.display = t === 'link' ? 'block' : 'none';
+        document.getElementById('fields-vcard').style.display = t === 'vcard' ? 'block' : 'none';
+    }
+    window.currentType = 'vcard';
+
     function saveNewCode() {
         const title = document.getElementById('title').value.trim();
-        const name = document.getElementById('v-name').value.trim();
-        const func = document.getElementById('v-func').value.trim();
-        const phone = document.getElementById('v-phone').value.trim();
-        const email = document.getElementById('v-email').value.trim();
-        const content = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTITLE:${func}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD`;
-        if(!title || !name) return;
-        collection.push({ id: Date.now(), title, content, type: 'vcard' });
+        const content = window.currentType === 'link' ? document.getElementById('url').value.trim() : 
+            `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('v-name').value}\nTITLE:${document.getElementById('v-func').value}\nTEL:${document.getElementById('v-phone').value}\nEMAIL:${document.getElementById('v-email').value}\nEND:VCARD`;
+        if(!title || !content) return;
+        collection.push({ id: Date.now(), title, content, type: window.currentType });
         saveAndRender();
         closePanels();
     }
     
     function saveAndRender() {
-        collection.sort((a,b) => a.title.localeCompare(b.title));
+        collection.sort((a,b) => a.type === b.type ? a.title.localeCompare(b.title) : (a.type === 'vcard' ? -1 : 1));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
         render();
     }
-    
     function render() {
         const c = document.getElementById('app-container');
         c.innerHTML = '';
         collection.forEach(i => {
             const d = document.createElement('div');
             d.className = 'btn-container';
-            d.innerHTML = `<button class="qr-btn type-vcard" onclick="showQr('${i.content.replace(/\n/g, "\\n")}')">${i.title}</button><button class="delete-btn" onclick="deleteCode(${i.id})">✕</button>`;
+            d.innerHTML = `<button class="qr-btn type-${i.type}" onclick="showQr('${i.content.replace(/\n/g, "\\n")}')">${i.title}</button><button class="delete-btn" onclick="deleteCode(${i.id})">✕</button>`;
             c.appendChild(d);
         });
     }
-    
     function deleteCode(id) { if(confirm('Löschen?')) { collection = collection.filter(i => i.id !== id); saveAndRender(); } }
     
     window.showQr = function(data) {
