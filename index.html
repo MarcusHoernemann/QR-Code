@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.8.1</title>
+    <title>Q-R-Go v1.8.2</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -157,17 +157,19 @@
 </div>
 
 <footer>
-    <b>v1.8.1</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
+    <b>v1.8.2</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
 </footer>
 
 <script>
-    const STORAGE_KEY = 'qr_go_v181';
+    const STORAGE_KEY = 'qr_go_v182';
     let collection = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let currentType = 'vcard';
     let activeId = null;
     let deferredPrompt;
 
+    // PWA Install Prompt abfangen
     window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('Installationsbereit!');
         e.preventDefault();
         deferredPrompt = e;
         document.getElementById('install-prompt').style.display = 'block';
@@ -181,12 +183,11 @@
         deferredPrompt = null;
     }
 
+    // Service Worker Registrierung
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').then(reg => {
-                console.log('SW registriert');
-            });
-        });
+        navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('SW aktiv'))
+            .catch(err => console.log('SW Fehler:', err));
     }
 
     function togglePanel(id) {
@@ -213,6 +214,7 @@
         collection.push({ id: Date.now(), title, content, type: currentType });
         saveAndRender();
         closePanels();
+        document.querySelectorAll('input').forEach(i => i.value = '');
     }
     
     function saveAndRender() {
@@ -238,10 +240,11 @@
         document.getElementById('overlay-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`;
         document.getElementById('qr-overlay').classList.add('active');
     }
+    
     function closeOverlay() { document.getElementById('qr-overlay').classList.remove('active'); }
 
     document.getElementById('delete-current-btn').onclick = () => {
-        if(confirm('Diesen QR-Code wirklich löschen?')) {
+        if(confirm('Eintrag löschen?')) {
             collection = collection.filter(item => item.id !== activeId);
             saveAndRender();
             closeOverlay();
