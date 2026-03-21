@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Q-R-Go v1.8.6</title>
+    <title>Q-R-Go v1.8.7</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4b5563">
@@ -140,7 +140,7 @@
 <div id="backup-panel" class="panel">
     <h2 style="font-size: 0.9rem; text-transform: uppercase; margin-top:0;">Backup & Restore</h2>
     <button class="btn-primary" onclick="exportData()">💾 Sammlung exportieren</button>
-    <input type="file" id="import-file" style="display:none" onchange="importData(event)">
+    <input type="file" id="import-file" style="display:none" accept=".json,application/json" onchange="importData(event)">
     <button class="btn-primary" style="margin-top:10px;" onclick="document.getElementById('import-file').click()">📂 Backup laden</button>
     <button class="btn-text" onclick="closePanels()">Schließen</button>
 </div>
@@ -181,7 +181,7 @@
 </div>
 
 <footer>
-    <b>v1.8.6</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
+    <b>1.8.7</b> &nbsp;|&nbsp; &copy; 2026 Marcus Hörnemann &nbsp;|&nbsp; Alle Rechte vorbehalten
 </footer>
 
 <script>
@@ -212,8 +212,6 @@
         });
     }
 
-    // --- FIX: Formular-Funktionen ---
-    
     function togglePanel(id) {
         const p = document.getElementById(id);
         const active = p.classList.contains('active');
@@ -305,15 +303,24 @@
     }
 
     function importData(e) {
+        if (!e.target.files[0]) return;
         const r = new FileReader();
         r.onload = (ev) => { 
             try {
-                collection = JSON.parse(ev.target.result);
-                saveAndRender();
-                closePanels();
-            } catch(e) { alert("Backup-Datei fehlerhaft."); }
+                const data = JSON.parse(ev.target.result);
+                if (Array.isArray(data)) {
+                    collection = data;
+                    saveAndRender();
+                    closePanels();
+                    alert("Backup erfolgreich geladen!");
+                } else {
+                    throw new Error();
+                }
+            } catch(e) { alert("Backup-Datei fehlerhaft oder kein gültiges Format."); }
         };
         r.readAsText(e.target.files[0]);
+        // Reset input so the same file can be selected again
+        e.target.value = '';
     }
 
     saveAndRender();
